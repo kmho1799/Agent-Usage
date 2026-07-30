@@ -14,7 +14,7 @@ Codex와 Claude의 남은 사용량과 초기화 시간을 한눈에 보여주�
 
 저장소 전체가 필요하지 않다면 아래 설치 파일 하나만 다운로드해 실행하세요.
 
-[AgentUsage-Setup-1.0.0.0.exe 다운로드](https://github.com/kmho1799/Agent-Usage/blob/main/installer/Output/AgentUsage-Setup-1.0.0.0.exe?raw=1)
+[AgentUsage-Setup-1.0.0.0.exe 다운로드](https://github.com/kmho1799/Agent-Usage/releases/latest/download/AgentUsage-Setup-1.0.0.0.exe)
 
 .NET을 별도로 설치할 필요는 없습니다.
 
