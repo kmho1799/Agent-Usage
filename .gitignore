@@ -1,0 +1,13 @@
+bin/
+obj/
+publish/
+*.user
+*.suo
+.vs/
+.codex/
+.omc/
+token-pulse-*
+Assets/agent-usage-icon.png
+Assets/agent-usage-icon-source.png
+installer/Output/*
+!installer/Output/AgentUsage-Setup-*.exe

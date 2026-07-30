@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\agent-usage.ico</ApplicationIcon>
+    <AssemblyName>AgentUsage</AssemblyName>
+    <Product>Agent Usage</Product>
+    <AssemblyTitle>Agent Usage</AssemblyTitle>
+    <RootNamespace>TokenPulse</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\agent-usage-icon-256.png" />
+    <Resource Include="Assets\codex-official.png" />
+    <Resource Include="Assets\claude-official.png" />
+  </ItemGroup>
+</Project>
