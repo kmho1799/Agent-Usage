@@ -47,7 +47,7 @@ dotnet run --project .\AgentUsage.csproj
 ## 인증과 개인정보
 
 - Codex 인증은 로컬 Codex CLI를 통해 사용하며 앱에 저장하지 않습니다.
-- Claude 인증은 사용자 폴더의 `.claude\.credentials.json`을 읽기만 하며 복사하거나 수정하지 않습니다.
+- Claude 인증은 사용자 폴더의 `.claude\.credentials.json`을 복사하거나 앱에서 직접 수정하지 않습니다. 토큰이 만료된 경우에만 Claude Code CLI를 한 번 호출하며, CLI가 자격 증명을 갱신합니다.
 - 토큰, 이메일, 사용자 이름 같은 개인정보는 저장소에 포함하지 않습니다.
 - 로컬 개발 도구 기록, 디자인 산출물, 실제 계정 화면 캡처는 `.gitignore`로 제외합니다.
 
