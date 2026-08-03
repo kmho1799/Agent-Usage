@@ -9,7 +9,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\agent-usage.ico</ApplicationIcon>
     <AssemblyName>AgentUsage</AssemblyName>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <Product>Agent Usage</Product>
     <AssemblyTitle>Agent Usage</AssemblyTitle>
     <RootNamespace>TokenPulse</RootNamespace>

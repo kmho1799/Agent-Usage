@@ -6,7 +6,7 @@
         Width="372"
         Height="505"
         MinWidth="340"
-        MinHeight="500"
+        MinHeight="140"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -30,9 +30,9 @@
             <Grid ClipToBounds="True">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="49"/>
-                    <RowDefinition Height="167"/>
-                    <RowDefinition Height="1"/>
-                    <RowDefinition Height="192"/>
+                    <RowDefinition x:Name="CodexRow" Height="167"/>
+                    <RowDefinition x:Name="ProviderDividerRow" Height="1"/>
+                    <RowDefinition x:Name="ClaudeRow" Height="192"/>
                     <RowDefinition Height="55"/>
                 </Grid.RowDefinitions>
 
@@ -88,6 +88,17 @@
                                                   IsChecked="True"
                                                   Click="Topmost_Click"/>
                                         <Separator/>
+                                        <MenuItem x:Name="CodexEnabledMenuItem"
+                                                  Header="Codex 사용"
+                                                  IsCheckable="True"
+                                                  IsChecked="True"
+                                                  Click="ProviderEnabled_Click"/>
+                                        <MenuItem x:Name="ClaudeEnabledMenuItem"
+                                                  Header="Claude 사용"
+                                                  IsCheckable="True"
+                                                  IsChecked="True"
+                                                  Click="ProviderEnabled_Click"/>
+                                        <Separator/>
                                         <MenuItem Header="Codex 사용량 페이지 열기"
                                                   Click="OpenCodexUsage_Click"/>
                                         <MenuItem Header="Claude 사용량 페이지 열기"
@@ -104,7 +115,7 @@
                     </Grid>
                 </Border>
 
-                <Grid Grid.Row="1" Margin="18,15,18,14">
+                <Grid x:Name="CodexPanel" Grid.Row="1" Margin="18,15,18,14">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="38"/>
                         <RowDefinition Height="*"/>
@@ -193,11 +204,12 @@
                     </Grid>
                 </Grid>
 
-                <Border Grid.Row="2"
+                <Border x:Name="ProviderDivider"
+                        Grid.Row="2"
                         Margin="18,0"
                         Background="{StaticResource DividerBrush}"/>
 
-                <Grid Grid.Row="3" Margin="18,15,18,14">
+                <Grid x:Name="ClaudePanel" Grid.Row="3" Margin="18,15,18,14">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="38"/>
                         <RowDefinition Height="*"/>

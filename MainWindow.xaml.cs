@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -18,17 +19,29 @@ namespace TokenPulse;
 
 public partial class MainWindow : Window
 {
+    private const string SettingsKeyPath = @"Software\AgentUsage";
+    private const string CodexEnabledValueName = "CodexEnabled";
+    private const string ClaudeEnabledValueName = "ClaudeEnabled";
+
+    private const double CodexRowHeight = 167;
+    private const double ClaudeRowHeight = 192;
+    private const double DividerRowHeight = 1;
+    private const double ChromeHeight = 145;
+
     private readonly CodexUsageService _codexUsageService = new();
     private readonly ClaudeUsageService _claudeUsageService = new();
     private readonly DispatcherTimer _refreshTimer;
     private readonly CancellationTokenSource _lifetime = new();
     private Forms.NotifyIcon? _trayIcon;
     private bool _isRefreshing;
+    private bool _isRefreshPending;
     private bool _isExiting;
 
     public MainWindow()
     {
         InitializeComponent();
+        LoadProviderSettings();
+        ApplyProviderLayout(adjustPosition: false);
 
         _refreshTimer = new DispatcherTimer
         {
@@ -78,10 +91,85 @@ public partial class MainWindow : Window
         Top = area.Bottom - Height - 24;
     }
 
+    private void LoadProviderSettings()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(SettingsKeyPath);
+            CodexEnabledMenuItem.IsChecked = ReadEnabled(key, CodexEnabledValueName);
+            ClaudeEnabledMenuItem.IsChecked = ReadEnabled(key, ClaudeEnabledValueName);
+        }
+        catch (SystemException)
+        {
+            CodexEnabledMenuItem.IsChecked = true;
+            ClaudeEnabledMenuItem.IsChecked = true;
+        }
+    }
+
+    private static bool ReadEnabled(RegistryKey? key, string valueName) =>
+        key?.GetValue(valueName) is int stored ? stored != 0 : true;
+
+    private void SaveProviderSettings()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(SettingsKeyPath);
+            key?.SetValue(CodexEnabledValueName, CodexEnabledMenuItem.IsChecked ? 1 : 0, RegistryValueKind.DWord);
+            key?.SetValue(ClaudeEnabledValueName, ClaudeEnabledMenuItem.IsChecked ? 1 : 0, RegistryValueKind.DWord);
+        }
+        catch (SystemException)
+        {
+        }
+    }
+
+    private void ApplyProviderLayout(bool adjustPosition)
+    {
+        var codexEnabled = CodexEnabledMenuItem.IsChecked;
+        var claudeEnabled = ClaudeEnabledMenuItem.IsChecked;
+        var dividerVisible = codexEnabled && claudeEnabled;
+
+        CodexPanel.Visibility = codexEnabled ? Visibility.Visible : Visibility.Collapsed;
+        ClaudePanel.Visibility = claudeEnabled ? Visibility.Visible : Visibility.Collapsed;
+        ProviderDivider.Visibility = dividerVisible ? Visibility.Visible : Visibility.Collapsed;
+
+        CodexRow.Height = new GridLength(codexEnabled ? CodexRowHeight : 0);
+        ClaudeRow.Height = new GridLength(claudeEnabled ? ClaudeRowHeight : 0);
+        ProviderDividerRow.Height = new GridLength(dividerVisible ? DividerRowHeight : 0);
+
+        var height = ChromeHeight
+            + (codexEnabled ? CodexRowHeight : 0)
+            + (claudeEnabled ? ClaudeRowHeight : 0)
+            + (dividerVisible ? DividerRowHeight : 0);
+
+        if (Math.Abs(height - Height) < 0.5)
+        {
+            return;
+        }
+
+        var previousHeight = Height;
+        Height = height;
+
+        if (adjustPosition)
+        {
+            Top = Math.Max(SystemParameters.WorkArea.Top, Top + (previousHeight - height));
+        }
+    }
+
     private async Task RefreshUsageAsync()
     {
         if (_isRefreshing)
         {
+            return;
+        }
+
+        var codexEnabled = CodexEnabledMenuItem.IsChecked;
+        var claudeEnabled = ClaudeEnabledMenuItem.IsChecked;
+
+        if (!codexEnabled && !claudeEnabled)
+        {
+            LiveDot.Fill = (MediaBrush)FindResource("MutedTextBrush");
+            LiveText.Text = "조회 안 함";
+            UpdatedText.Text = "조회할 공급자가 없습니다";
             return;
         }
 
@@ -91,50 +179,72 @@ public partial class MainWindow : Window
 
         try
         {
-            var codexTask = _codexUsageService.GetUsageAsync(_lifetime.Token);
-            var claudeTask = _claudeUsageService.GetUsageAsync(_lifetime.Token);
-            await Task.WhenAll(codexTask, claudeTask);
+            var codexTask = codexEnabled
+                ? _codexUsageService.GetUsageAsync(_lifetime.Token)
+                : null;
+            var claudeTask = claudeEnabled
+                ? _claudeUsageService.GetUsageAsync(_lifetime.Token)
+                : null;
 
-            UpdateProvider(
-                codexTask.Result,
-                CodexPlanText,
-                CodexStatusBadge,
-                CodexStatusText,
-                CodexRemainingText,
-                CodexWindowLabel,
-                CodexResetText,
-                null,
-                null,
-                null,
-                CodexArc,
-                (MediaBrush)FindResource("CodexBrush"));
-            CodexResetDateText.Text = codexTask.Result.IsAvailable
-                && codexTask.Result.Primary?.ResetsAt is { } codexReset
-                    ? $"{codexReset.ToLocalTime():M월 d일}"
-                    : "";
+            if (codexTask is not null)
+            {
+                await codexTask;
+            }
 
-            UpdateProvider(
-                claudeTask.Result,
-                ClaudePlanText,
-                ClaudeStatusBadge,
-                ClaudeStatusText,
-                ClaudeRemainingText,
-                ClaudeWindowLabel,
-                ClaudeResetText,
-                ClaudeWeeklyBar,
-                ClaudeSecondaryLabel,
-                ClaudeWeeklyText,
-                ClaudeArc,
-                (MediaBrush)FindResource("ClaudeBrush"));
-            ClaudeWeeklyResetText.Text = claudeTask.Result.Secondary is not null
-                ? FormatReset(claudeTask.Result.Secondary.ResetsAt)
-                : "주간 초기화 정보 없음";
+            if (claudeTask is not null)
+            {
+                await claudeTask;
+            }
 
-            var bothAvailable = codexTask.Result.IsAvailable && claudeTask.Result.IsAvailable;
-            LiveDot.Fill = bothAvailable
+            var allAvailable = true;
+
+            if (codexTask is not null)
+            {
+                UpdateProvider(
+                    codexTask.Result,
+                    CodexPlanText,
+                    CodexStatusBadge,
+                    CodexStatusText,
+                    CodexRemainingText,
+                    CodexWindowLabel,
+                    CodexResetText,
+                    null,
+                    null,
+                    null,
+                    CodexArc,
+                    (MediaBrush)FindResource("CodexBrush"));
+                CodexResetDateText.Text = codexTask.Result.IsAvailable
+                    && codexTask.Result.Primary?.ResetsAt is { } codexReset
+                        ? $"{codexReset.ToLocalTime():M월 d일}"
+                        : "";
+                allAvailable &= codexTask.Result.IsAvailable;
+            }
+
+            if (claudeTask is not null)
+            {
+                UpdateProvider(
+                    claudeTask.Result,
+                    ClaudePlanText,
+                    ClaudeStatusBadge,
+                    ClaudeStatusText,
+                    ClaudeRemainingText,
+                    ClaudeWindowLabel,
+                    ClaudeResetText,
+                    ClaudeWeeklyBar,
+                    ClaudeSecondaryLabel,
+                    ClaudeWeeklyText,
+                    ClaudeArc,
+                    (MediaBrush)FindResource("ClaudeBrush"));
+                ClaudeWeeklyResetText.Text = claudeTask.Result.Secondary is not null
+                    ? FormatReset(claudeTask.Result.Secondary.ResetsAt)
+                    : "주간 초기화 정보 없음";
+                allAvailable &= claudeTask.Result.IsAvailable;
+            }
+
+            LiveDot.Fill = allAvailable
                 ? (MediaBrush)FindResource("SuccessBrush")
                 : (MediaBrush)FindResource("WarningBrush");
-            LiveText.Text = bothAvailable ? "Live" : "확인 필요";
+            LiveText.Text = allAvailable ? "Live" : "확인 필요";
             UpdatedText.Text = $"방금 업데이트됨 · {DateTime.Now:HH:mm}";
         }
         catch (OperationCanceledException)
@@ -144,6 +254,12 @@ public partial class MainWindow : Window
         {
             StopRefreshAnimation();
             _isRefreshing = false;
+
+            if (_isRefreshPending)
+            {
+                _isRefreshPending = false;
+                await RefreshUsageAsync();
+            }
         }
     }
 
@@ -320,6 +436,20 @@ public partial class MainWindow : Window
 
     private void Topmost_Click(object sender, RoutedEventArgs e) =>
         Topmost = TopmostMenuItem.IsChecked;
+
+    private async void ProviderEnabled_Click(object sender, RoutedEventArgs e)
+    {
+        SaveProviderSettings();
+        ApplyProviderLayout(adjustPosition: true);
+
+        if (_isRefreshing)
+        {
+            _isRefreshPending = true;
+            return;
+        }
+
+        await RefreshUsageAsync();
+    }
 
     private void OpenCodexUsage_Click(object sender, RoutedEventArgs e) =>
         OpenUrl("https://chatgpt.com/codex/settings/usage");
