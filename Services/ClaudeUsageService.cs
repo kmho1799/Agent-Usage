@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -19,7 +20,12 @@ public sealed class ClaudeUsageService
         ".claude",
         ".credentials.json");
 
-    public async Task<UsageSnapshot> GetUsageAsync(CancellationToken cancellationToken)
+    public Task<UsageSnapshot> GetUsageAsync(CancellationToken cancellationToken) =>
+        GetUsageAsync(cancellationToken, refreshExpiredToken: true);
+
+    private async Task<UsageSnapshot> GetUsageAsync(
+        CancellationToken cancellationToken,
+        bool refreshExpiredToken)
     {
         try
         {
@@ -41,7 +47,12 @@ public sealed class ClaudeUsageService
             var plan = ReadPlan(oauth);
             if (IsExpired(oauth))
             {
-                return UsageSnapshot.Unavailable(plan, "Claude Code에서 /usage를 실행해 로그인을 갱신하세요.");
+                if (refreshExpiredToken && await RefreshCredentialsAsync(cancellationToken))
+                {
+                    return await GetUsageAsync(cancellationToken, refreshExpiredToken: false);
+                }
+
+                return UsageSnapshot.Unavailable(plan, "Claude CLI를 실행해주세요.");
             }
 
             using var request = new HttpRequestMessage(
@@ -54,7 +65,7 @@ public sealed class ClaudeUsageService
             using var response = await HttpClient.SendAsync(request, cancellationToken);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                return UsageSnapshot.Unavailable(plan, "Claude Code에서 /usage를 실행해 로그인을 갱신하세요.");
+                return UsageSnapshot.Unavailable(plan, "Claude CLI를 실행해주세요.");
             }
 
             response.EnsureSuccessStatusCode();
@@ -83,6 +94,57 @@ public sealed class ClaudeUsageService
         catch (Exception ex)
         {
             return UsageSnapshot.Unavailable("Claude", $"Claude 확인 실패: {ex.Message}");
+        }
+    }
+
+    private static async Task<bool> RefreshCredentialsAsync(CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "claude",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        startInfo.ArgumentList.Add("-p");
+        startInfo.ArgumentList.Add("OK라고만 답하세요.");
+        startInfo.ArgumentList.Add("--tools");
+        startInfo.ArgumentList.Add("");
+        startInfo.ArgumentList.Add("--max-turns");
+        startInfo.ArgumentList.Add("1");
+        startInfo.ArgumentList.Add("--no-session-persistence");
+
+        using var process = new Process { StartInfo = startInfo };
+        var started = false;
+        try
+        {
+            started = process.Start();
+            if (!started)
+            {
+                return false;
+            }
+
+            var outputTask = process.StandardOutput.ReadToEndAsync(timeout.Token);
+            var errorTask = process.StandardError.ReadToEndAsync(timeout.Token);
+            await process.WaitForExitAsync(timeout.Token);
+            await Task.WhenAll(outputTask, errorTask);
+            return process.ExitCode == 0;
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+        finally
+        {
+            if (started && !process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync(CancellationToken.None);
+            }
         }
     }
 
