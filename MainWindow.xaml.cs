@@ -23,7 +23,7 @@ public partial class MainWindow : Window
     private const string CodexEnabledValueName = "CodexEnabled";
     private const string ClaudeEnabledValueName = "ClaudeEnabled";
 
-    private const double CodexRowHeight = 167;
+    private const double CodexRowHeight = 192;
     private const double ClaudeRowHeight = 192;
     private const double DividerRowHeight = 1;
     private const double ChromeHeight = 145;
@@ -208,15 +208,14 @@ public partial class MainWindow : Window
                     CodexRemainingText,
                     CodexWindowLabel,
                     CodexResetText,
-                    null,
-                    null,
-                    null,
+                    CodexWeeklyBar,
+                    CodexSecondaryLabel,
+                    CodexWeeklyText,
                     CodexArc,
                     (MediaBrush)FindResource("CodexBrush"));
-                CodexResetDateText.Text = codexTask.Result.IsAvailable
-                    && codexTask.Result.Primary?.ResetsAt is { } codexReset
-                        ? $"{codexReset.ToLocalTime():M월 d일}"
-                        : "";
+                CodexWeeklyResetText.Text = codexTask.Result.Secondary is not null
+                    ? FormatReset(codexTask.Result.Secondary.ResetsAt)
+                    : "주간 초기화 정보 없음";
                 allAvailable &= codexTask.Result.IsAvailable;
             }
 
