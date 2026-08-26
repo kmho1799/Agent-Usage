@@ -4,7 +4,7 @@ Codex와 Claude의 남은 사용량과 초기화 시간을 한눈에 보여주�
 
 ## 주요 기능
 
-- Codex 주간 남은 사용량 표시
+- Codex 5시간 세션 및 주간 남은 사용량 표시
 - Claude 5시간 세션 및 주간 남은 사용량 표시
 - 초기화까지 남은 시간과 날짜 표시
 - 5분마다 자동 갱신 및 수동 새로고침
@@ -14,7 +14,7 @@ Codex와 Claude의 남은 사용량과 초기화 시간을 한눈에 보여주�
 
 저장소 전체가 필요하지 않다면 아래 설치 파일 하나만 다운로드해 실행하세요.
 
-[AgentUsage-Setup-1.1.0.0.exe 다운로드](https://github.com/kmho1799/Agent-Usage/releases/latest/download/AgentUsage-Setup-1.1.0.0.exe)
+[AgentUsage-Setup-1.2.0.0.exe 다운로드](https://github.com/kmho1799/Agent-Usage/releases/latest/download/AgentUsage-Setup-1.2.0.0.exe)
 
 .NET을 별도로 설치할 필요는 없습니다.
 

@@ -6,6 +6,7 @@ publish/
 .vs/
 .codex/
 .omc/
+output/
 token-pulse-*
 Assets/agent-usage-icon.png
 Assets/agent-usage-icon-source.png

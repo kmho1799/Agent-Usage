@@ -141,19 +141,21 @@ public sealed class CodexUsageService
             return UsageSnapshot.Unavailable(plan, "Codex 사용량 정보가 없습니다.");
         }
 
-        var weekly = ParseBucket(rateLimits, "primary");
-        if (weekly is null)
+        var session = ParseWindow(rateLimits, "primary");
+        if (session is null)
         {
             return UsageSnapshot.Unavailable(plan, "Codex 사용 한도를 찾지 못했습니다.");
         }
 
-        return new UsageSnapshot(plan, weekly, null)
+        var weekly = ParseWindow(rateLimits, "secondary");
+        return new UsageSnapshot(plan, session.Value.Bucket, weekly?.Bucket)
         {
-            PrimaryLabel = "주간 남은 사용량"
+            PrimaryLabel = LabelFor(session.Value.WindowDurationMins, "현재 5시간 세션"),
+            SecondaryLabel = LabelFor(weekly?.WindowDurationMins, "주간 남은 사용량")
         };
     }
 
-    private static UsageBucket? ParseBucket(JsonElement parent, string propertyName)
+    private static RateLimitWindow? ParseWindow(JsonElement parent, string propertyName)
     {
         if (!parent.TryGetProperty(propertyName, out var bucket) ||
             bucket.ValueKind != JsonValueKind.Object ||
@@ -171,6 +173,49 @@ public sealed class CodexUsageService
             resetsAt = DateTimeOffset.FromUnixTimeSeconds(resetUnix);
         }
 
-        return new UsageBucket(Math.Clamp(usedPercent, 0, 100), resetsAt);
+        int? windowDurationMins = null;
+        if (bucket.TryGetProperty("windowDurationMins", out var durationElement) &&
+            durationElement.ValueKind == JsonValueKind.Number &&
+            durationElement.TryGetInt32(out var minutes))
+        {
+            windowDurationMins = minutes;
+        }
+
+        return new RateLimitWindow(
+            new UsageBucket(Math.Clamp(usedPercent, 0, 100), resetsAt),
+            windowDurationMins);
     }
+
+    private static string LabelFor(int? windowDurationMins, string fallback)
+    {
+        if (windowDurationMins is not int minutes || minutes <= 0)
+        {
+            return fallback;
+        }
+
+        var hours = minutes / 60.0;
+        if (hours is >= 4 and <= 6)
+        {
+            return "현재 5시간 세션";
+        }
+
+        if (hours is >= 20 and <= 28)
+        {
+            return "일간 남은 사용량";
+        }
+
+        if (hours is >= 144 and <= 192)
+        {
+            return "주간 남은 사용량";
+        }
+
+        if (hours is >= 600 and <= 800)
+        {
+            return "월간 남은 사용량";
+        }
+
+        return fallback;
+    }
+
+    private readonly record struct RateLimitWindow(UsageBucket Bucket, int? WindowDurationMins);
 }

@@ -4,7 +4,7 @@
         Title="Agent Usage"
         Icon="Assets/agent-usage-icon-256.png"
         Width="372"
-        Height="505"
+        Height="530"
         MinWidth="340"
         MinHeight="140"
         WindowStyle="None"
@@ -30,7 +30,7 @@
             <Grid ClipToBounds="True">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="49"/>
-                    <RowDefinition x:Name="CodexRow" Height="167"/>
+                    <RowDefinition x:Name="CodexRow" Height="192"/>
                     <RowDefinition x:Name="ProviderDividerRow" Height="1"/>
                     <RowDefinition x:Name="ClaudeRow" Height="192"/>
                     <RowDefinition Height="55"/>
@@ -187,7 +187,7 @@
 
                         <StackPanel Grid.Column="1" Margin="17,8,0,0">
                             <TextBlock x:Name="CodexWindowLabel"
-                                       Text="주간 남은 사용량"
+                                       Text="현재 5시간 세션"
                                        FontSize="11"
                                        Foreground="{StaticResource MutedTextBrush}"/>
                             <TextBlock x:Name="CodexResetText"
@@ -196,8 +196,27 @@
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        TextTrimming="CharacterEllipsis"/>
-                            <TextBlock x:Name="CodexResetDateText"
-                                       Margin="0,2,0,0"
+                            <ProgressBar x:Name="CodexWeeklyBar"
+                                         Margin="0,13,0,0"
+                                         Minimum="0"
+                                         Maximum="100"
+                                         Value="0"
+                                         Foreground="{StaticResource CodexBrush}"
+                                         Style="{StaticResource UsageProgressStyle}"/>
+                            <Grid Margin="0,6,0,0">
+                                <TextBlock x:Name="CodexSecondaryLabel"
+                                           Text="주간 남은 사용량"
+                                           FontSize="11"
+                                           Foreground="{StaticResource MutedTextBrush}"/>
+                                <TextBlock x:Name="CodexWeeklyText"
+                                           Text="--%"
+                                           HorizontalAlignment="Right"
+                                           FontSize="11"
+                                           Foreground="{StaticResource MutedTextBrush}"/>
+                            </Grid>
+                            <TextBlock x:Name="CodexWeeklyResetText"
+                                       Text="주간 초기화 시각 확인 중"
+                                       Margin="0,4,0,0"
                                        FontSize="11"
                                        Foreground="{StaticResource MutedTextBrush}"/>
                         </StackPanel>
