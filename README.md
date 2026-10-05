@@ -39,8 +39,7 @@ dotnet run --project .\AgentUsage.csproj
 .\installer\build.ps1
 ```
 
-설치 파일은 `installer\Output`에 생성됩니다.
-이 폴더에서는 `AgentUsage-Setup-*.exe`만 Git에 포함됩니다.
+설치 파일은 `installer\Output`에 생성되며 Git에는 포함하지 않습니다. 배포는 GitHub Release에 올립니다.
 
 > 설치 파일에 코드 서명을 하지 않았으므로 Windows에서 알 수 없는 게시자 경고가 표시될 수 있습니다.
 
@@ -52,3 +51,7 @@ dotnet run --project .\AgentUsage.csproj
 - 로컬 개발 도구 기록, 디자인 산출물, 실제 계정 화면 캡처는 `.gitignore`로 제외합니다.
 
 > Claude와 Codex의 내부 사용량 응답 형식이 변경되면 조회 기능이 동작하지 않을 수 있습니다.
+
+## 라이선스
+
+[MIT](LICENSE)

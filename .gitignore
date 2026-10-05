@@ -11,4 +11,3 @@ token-pulse-*
 Assets/agent-usage-icon.png
 Assets/agent-usage-icon-source.png
 installer/Output/*
-!installer/Output/AgentUsage-Setup-*.exe
